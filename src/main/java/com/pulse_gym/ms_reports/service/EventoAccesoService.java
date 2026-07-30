@@ -15,8 +15,18 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 public class EventoAccesoService {
 
+    /**
+     * Repositorio para la entidad EventoAcceso
+     */
     private final EventoAccesoRepository eventoAccesoRepository;
 
+    /**
+     * Procesa un evento de acceso recibido desde otro microservicio.
+     * Valida los datos del evento y lo guarda en la base de datos.
+     * 
+     * @param request DTO con los datos del evento de acceso
+     * @return MessegeGlobalDTO con el resultado del procesamiento
+     */
     @Transactional
     public MessegeGlobalDTO procesarEventoAcceso(EventoAccesoRequestDTO request) {
         
