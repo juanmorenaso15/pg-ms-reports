@@ -31,15 +31,12 @@ public class LimpiezaHistoricaService {
         log.info("Iniciando limpieza de datos históricos anteriores a: {}", fechaCorte);
 
         try {
-            // Eliminar eventos de acceso antiguos
             long eliminadosAcceso = eventoAccesoRepository.deleteAllByFechaRegistroBefore(fechaCorte);
             log.info("Eventos de acceso eliminados: {}", eliminadosAcceso);
 
-            // Eliminar eventos de pago antiguos
             long eliminadosPago = eventoPagoRepository.deleteAllByFechaPagoBefore(fechaCorte);
             log.info("Eventos de pago eliminados: {}", eliminadosPago);
 
-            // Eliminar eventos de máquina antiguos
             long eliminadosMaquina = eventoMaquinaRepository.deleteAllByFechaReporteBefore(fechaCorte);
             log.info("Eventos de máquina eliminados: {}", eliminadosMaquina);
 
