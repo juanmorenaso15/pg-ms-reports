@@ -3,6 +3,7 @@ package com.pulse_gym.ms_reports.repository;
 import com.pulse_gym.lb_common.entity.reports.EventoAcceso;
 import com.pulse_gym.lb_common.enums.EnumTipoAcceso;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -65,9 +66,20 @@ public interface EventoAccesoRepository extends JpaRepository<EventoAcceso, Long
      * @return Lista de objetos con fecha y conteo (se mapea con proyección)
      */
     @Query("SELECT DATE(e.fechaRegistro) as fecha, COUNT(e) as total " +
-           "FROM EventoAcceso e " +
-           "WHERE e.fechaRegistro BETWEEN :inicio AND :fin " +
-           "GROUP BY DATE(e.fechaRegistro) " +
-           "ORDER BY DATE(e.fechaRegistro)")
+            "FROM EventoAcceso e " +
+            "WHERE e.fechaRegistro BETWEEN :inicio AND :fin " +
+            "GROUP BY DATE(e.fechaRegistro) " +
+            "ORDER BY DATE(e.fechaRegistro)")
     List<Object[]> countByDayBetween(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
+
+    /**
+     * Elimina todos los eventos de acceso con fecha de registro anterior a la fecha
+     * especificada.
+     * 
+     * @param fecha Fecha límite
+     * @return Número de registros eliminados
+     */
+    @Modifying
+    @Query("DELETE FROM EventoAcceso e WHERE e.fechaRegistro < :fecha")
+    long deleteAllByFechaRegistroBefore(@Param("fecha") LocalDateTime fecha);
 }
