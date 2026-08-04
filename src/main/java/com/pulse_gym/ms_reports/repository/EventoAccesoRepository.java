@@ -82,4 +82,17 @@ public interface EventoAccesoRepository extends JpaRepository<EventoAcceso, Long
     @Modifying
     @Query("DELETE FROM EventoAcceso e WHERE e.fechaRegistro < :fecha")
     long deleteAllByFechaRegistroBefore(@Param("fecha") LocalDateTime fecha);
+
+    /**
+     * Obtiene todos los eventos de acceso de una fecha específica (sin distinción
+     * de hora).
+     *
+     * @param inicio Fecha inicio (00:00)
+     * @param fin    Fecha fin (23:59)
+     * @return Lista de eventos de acceso
+     */
+    @Query("SELECT e FROM EventoAcceso e WHERE e.fechaRegistro BETWEEN :inicio AND :fin")
+    List<EventoAcceso> findByFechaRegistroBetweenOrderByFechaRegistroAsc(
+            @Param("inicio") LocalDateTime inicio,
+            @Param("fin") LocalDateTime fin);
 }
