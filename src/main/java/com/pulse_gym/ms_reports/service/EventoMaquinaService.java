@@ -17,40 +17,61 @@ import java.time.LocalDate;
 @Slf4j
 public class EventoMaquinaService {
 
-    /**
-     * inyeccion de dependencias del repositorio de eventos de máquina
-     */
     private final EventoMaquinaRepository eventoMaquinaRepository;
+    private final DataValidationService validationService;
 
-    /**
-     * Procesa un evento de máquina y lo guarda en la base de datos.
-     *
-     * @param request el objeto EventoMaquinaRequestDTO que contiene los datos del evento de máquina
-     * @return un objeto MessegeGlobalDTO con el resultado del procesamiento
-     */
     @Transactional
     public MessegeGlobalDTO procesarEventoMaquina(EventoMaquinaRequestDTO request) {
+        String tipoDato = "MAQUINA";
+
         if (request.getNombreMaquina() == null || request.getNombreMaquina().isBlank()) {
-            log.warn("Reporte de máquina rechazado: falta nombre de máquina");
-            return new MessegeGlobalDTO("Error: el nombre de la máquina es obligatorio");
+            String error = "Campo obligatorio faltante: nombreMaquina";
+            validationService.registrarIncidencia(tipoDato, request, error);
+            return new MessegeGlobalDTO("Error: " + error);
         }
         if (request.getEstado() == null || request.getEstado().isBlank()) {
-            log.warn("Reporte de máquina rechazado: falta estado");
-            return new MessegeGlobalDTO("Error: el estado es obligatorio");
+            String error = "Campo obligatorio faltante: estado";
+            validationService.registrarIncidencia(tipoDato, request, error);
+            return new MessegeGlobalDTO("Error: " + error);
         }
         if (request.getFechaReporte() == null) {
+            String error = "Campo obligatorio faltante: fechaReporte. Se asigna fecha actual.";
+            validationService.registrarIncidencia(tipoDato, request, error);
             request.setFechaReporte(LocalDate.now());
+        }
+
+        EnumEstado estadoEnum;
+        try {
+            estadoEnum = EnumEstado.valueOf(request.getEstado().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            String error = "Formato inválido para estado: " + request.getEstado() +
+                    ". Valores permitidos: OPERATIVO, MANTENIMIENTO, FUERA_DE_SERVICIO, RETIRADO";
+            validationService.registrarIncidencia(tipoDato, request, error);
+            return new MessegeGlobalDTO("Error: " + error);
+        }
+
+        if (request.getFechaReporte().isAfter(LocalDate.now())) {
+            String error = "Fecha de reporte futura no permitida: " + request.getFechaReporte();
+            validationService.registrarIncidencia(tipoDato, request, error);
+            return new MessegeGlobalDTO("Error: " + error);
+        }
+
+        if (estadoEnum == EnumEstado.OPERATIVO) {
+            if (request.getFechaReparacion() == null) {
+                String error = "Falta fecha de reparación para una máquina en estado OPERATIVO";
+                validationService.registrarIncidencia(tipoDato, request, error);
+                return new MessegeGlobalDTO("Error: " + error);
+            }
         }
 
         EventoMaquina evento = new EventoMaquina();
         evento.setNombreMaquina(request.getNombreMaquina());
-        evento.setEstado(EnumEstado.valueOf(request.getEstado().toUpperCase()));
+        evento.setEstado(estadoEnum);
         evento.setFechaReporte(request.getFechaReporte());
         evento.setDescripcionProblema(request.getDescripcionProblema());
         evento.setFechaReparacion(request.getFechaReparacion());
 
         eventoMaquinaRepository.save(evento);
-
         log.info("Reporte de máquina guardado correctamente: {}", request.getNombreMaquina());
 
         return new MessegeGlobalDTO("Reporte de máquina procesado correctamente");

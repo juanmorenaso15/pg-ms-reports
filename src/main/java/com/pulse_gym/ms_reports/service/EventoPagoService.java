@@ -17,33 +17,58 @@ import java.time.LocalDateTime;
 @Slf4j
 public class EventoPagoService {
 
-    /**
-     * Repositorio para la entidad EventoPago
-     */
     private final EventoPagoRepository eventoPagoRepository;
+    private final DataValidationService validationService;
 
-    /**
-     * Procesa un evento de pago recibido desde otro microservicio.
-     * Valida los datos del evento y lo guarda en la base de datos.
-     * 
-     * @param request DTO con los datos del evento de pago
-     * @return MessegeGlobalDTO con el resultado del procesamiento
-     */
     @Transactional
     public MessegeGlobalDTO procesarEventoPago(EventoPagoRequestDTO request) {
-        // Validaciones
-        if (request.getSocioId() == null) {
-            log.warn("Evento de pago rechazado: falta socioId");
-            return new MessegeGlobalDTO("Error: falta el identificador del socio");
+        String tipoDato = "PAGO";
+
+        // 1. Validar campos obligatorios
+        if (request.getSocioId() == null || request.getSocioId() <= 0) {
+            String error = "Campo obligatorio faltante o inválido: socioId";
+            validationService.registrarIncidencia(tipoDato, request, error);
+            return new MessegeGlobalDTO("Error: " + error);
         }
-        if (request.getMonto() == null || request.getMonto().compareTo(BigDecimal.ZERO) <= 0) {
-            log.warn("Evento de pago rechazado: monto inválido");
-            return new MessegeGlobalDTO("Error: monto inválido o menor o igual a cero");
+        if (request.getMonto() == null) {
+            String error = "Campo obligatorio faltante: monto";
+            validationService.registrarIncidencia(tipoDato, request, error);
+            return new MessegeGlobalDTO("Error: " + error);
         }
         if (request.getFechaPago() == null) {
-            request.setFechaPago(LocalDateTime.now());
+            // Si no viene fecha, asignamos la actual para continuar, pero registramos una advertencia? 
+            // Mejor rechazar porque es obligatorio.
+            String error = "Campo obligatorio faltante: fechaPago";
+            validationService.registrarIncidencia(tipoDato, request, error);
+            return new MessegeGlobalDTO("Error: " + error);
+        }
+        if (request.getTipoMembresia() == null || request.getTipoMembresia().isBlank()) {
+            // Podría ser opcional, pero lo marcamos como obligatorio para el reporte
+            String error = "Campo obligatorio faltante: tipoMembresia";
+            validationService.registrarIncidencia(tipoDato, request, error);
+            return new MessegeGlobalDTO("Error: " + error);
+        }
+        if (request.getMetodoPago() == null || request.getMetodoPago().isBlank()) {
+            String error = "Campo obligatorio faltante: metodoPago";
+            validationService.registrarIncidencia(tipoDato, request, error);
+            return new MessegeGlobalDTO("Error: " + error);
         }
 
+        // 2. Validar formato (números)
+        if (request.getMonto().compareTo(BigDecimal.ZERO) <= 0) {
+            String error = "Monto debe ser mayor a 0: " + request.getMonto();
+            validationService.registrarIncidencia(tipoDato, request, error);
+            return new MessegeGlobalDTO("Error: " + error);
+        }
+
+        // 3. Validar que la fecha no sea futura (opcional pero buena práctica)
+        if (request.getFechaPago().isAfter(LocalDateTime.now())) {
+            String error = "Fecha de pago futura no permitida: " + request.getFechaPago();
+            validationService.registrarIncidencia(tipoDato, request, error);
+            return new MessegeGlobalDTO("Error: " + error);
+        }
+
+        // 4. Guardar
         EventoPago evento = new EventoPago();
         evento.setSocioIdentificador(request.getSocioId().toString());
         evento.setMonto(request.getMonto());
@@ -52,8 +77,8 @@ public class EventoPagoService {
         evento.setMetodoPago(request.getMetodoPago());
 
         eventoPagoRepository.save(evento);
-
         log.info("Evento de pago guardado correctamente para socio ID: {}", request.getSocioId());
+
         return new MessegeGlobalDTO("Evento de pago procesado correctamente");
     }
 }
