@@ -17,14 +17,25 @@ import java.time.LocalDateTime;
 @Slf4j
 public class EventoPagoService {
 
+    /**
+     * Repositorio para manejar las operaciones de la entidad EventoPago en la base de datos.
+     */
     private final EventoPagoRepository eventoPagoRepository;
+    
+    /**
+     * Servicio para validar los datos recibidos y registrar incidencias en caso de errores.
+     */
     private final DataValidationService validationService;
 
+    /**
+     * Procesa un evento de pago, validando los datos y registrando el evento en la base de datos.
+     * @param request Objeto que contiene los datos del evento de pago
+     * @return Mensaje indicando el resultado del procesamiento
+     */
     @Transactional
     public MessegeGlobalDTO procesarEventoPago(EventoPagoRequestDTO request) {
         String tipoDato = "PAGO";
 
-        // 1. Validar campos obligatorios
         if (request.getSocioId() == null || request.getSocioId() <= 0) {
             String error = "Campo obligatorio faltante o inválido: socioId";
             validationService.registrarIncidencia(tipoDato, request, error);
@@ -36,8 +47,6 @@ public class EventoPagoService {
             return new MessegeGlobalDTO("Error: " + error);
         }
         if (request.getFechaPago() == null) {
-            // Si no viene fecha, asignamos la actual para continuar, pero registramos una advertencia? 
-            // Mejor rechazar porque es obligatorio.
             String error = "Campo obligatorio faltante: fechaPago";
             validationService.registrarIncidencia(tipoDato, request, error);
             return new MessegeGlobalDTO("Error: " + error);
@@ -54,21 +63,18 @@ public class EventoPagoService {
             return new MessegeGlobalDTO("Error: " + error);
         }
 
-        // 2. Validar formato (números)
         if (request.getMonto().compareTo(BigDecimal.ZERO) <= 0) {
             String error = "Monto debe ser mayor a 0: " + request.getMonto();
             validationService.registrarIncidencia(tipoDato, request, error);
             return new MessegeGlobalDTO("Error: " + error);
         }
 
-        // 3. Validar que la fecha no sea futura (opcional pero buena práctica)
         if (request.getFechaPago().isAfter(LocalDateTime.now())) {
             String error = "Fecha de pago futura no permitida: " + request.getFechaPago();
             validationService.registrarIncidencia(tipoDato, request, error);
             return new MessegeGlobalDTO("Error: " + error);
         }
 
-        // 4. Guardar
         EventoPago evento = new EventoPago();
         evento.setSocioIdentificador(request.getSocioId().toString());
         evento.setMonto(request.getMonto());
