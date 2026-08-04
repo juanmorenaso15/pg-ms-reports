@@ -17,9 +17,21 @@ import java.time.LocalDate;
 @Slf4j
 public class EventoMaquinaService {
 
+    /**
+     *  Repositorio para manejar las operaciones de la entidad EventoMaquina en la base de datos.
+     */
     private final EventoMaquinaRepository eventoMaquinaRepository;
+
+    /**
+     * Servicio para validar los datos recibidos y registrar incidencias en caso de errores.
+     */
     private final DataValidationService validationService;
 
+    /**
+     * Procesa un evento de máquina, validando los datos y registrando el evento en la base de datos.
+     * @param request Objeto que contiene los datos del evento de máquina
+     * @return Mensaje indicando el resultado del procesamiento
+     */
     @Transactional
     public MessegeGlobalDTO procesarEventoMaquina(EventoMaquinaRequestDTO request) {
         String tipoDato = "MAQUINA";
