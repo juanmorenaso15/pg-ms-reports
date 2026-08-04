@@ -16,45 +16,68 @@ import org.springframework.transaction.annotation.Transactional;
 public class EventoAccesoService {
 
     /**
-     * Repositorio para la entidad EventoAcceso
+     * Repositorio para manejar las operaciones de la entidad EventoAcceso en la base de datos.
      */
     private final EventoAccesoRepository eventoAccesoRepository;
 
     /**
-     * Procesa un evento de acceso recibido desde otro microservicio.
-     * Valida los datos del evento y lo guarda en la base de datos.
-     * 
-     * @param request DTO con los datos del evento de acceso
-     * @return MessegeGlobalDTO con el resultado del procesamiento
+     * Servicio para validar los datos recibidos y registrar incidencias en caso de errores.
+     */
+    private final DataValidationService validationService;
+
+    /**
+     * Procesa un evento de acceso, validando los datos y registrando el evento en la base de datos.
+     *
+     * @param request Objeto que contiene los datos del evento de acceso
+     * @return Mensaje indicando el resultado del procesamiento
      */
     @Transactional
     public MessegeGlobalDTO procesarEventoAcceso(EventoAccesoRequestDTO request) {
-        
-        if (request.getSocioId() == null) {
-            log.warn("Evento de acceso rechazado: falta socioId");
-            return new MessegeGlobalDTO("Error: falta el identificador del socio");
+        String tipoDato = "ACCESO";
+
+        if (request.getSocioId() == null || request.getSocioId() <= 0) {
+            String error = "Campo obligatorio faltante o inválido: socioId";
+            validationService.registrarIncidencia(tipoDato, request, error);
+            return new MessegeGlobalDTO("Error: " + error);
         }
         if (request.getFechaHora() == null) {
-            log.warn("Evento de acceso rechazado: falta fechaHora");
-            return new MessegeGlobalDTO("Error: falta la fecha y hora del evento");
+            String error = "Campo obligatorio faltante: fechaHora";
+            validationService.registrarIncidencia(tipoDato, request, error);
+            return new MessegeGlobalDTO("Error: " + error);
         }
-        if (request.getTipoAcceso() == null || request.getTipoAcceso().isEmpty()) {
-            log.warn("Evento de acceso rechazado: falta tipoAcceso");
-            return new MessegeGlobalDTO("Error: falta el tipo de acceso");
+        if (request.getTipoAcceso() == null || request.getTipoAcceso().isBlank()) {
+            String error = "Campo obligatorio faltante: tipoAcceso";
+            validationService.registrarIncidencia(tipoDato, request, error);
+            return new MessegeGlobalDTO("Error: " + error);
         }
-        if (request.getTipoEvento() == null || request.getTipoEvento().isEmpty()) {
-            // Por defecto asumimos que es ENTRADA
+        if (request.getTipoEvento() == null || request.getTipoEvento().isBlank()) {
             request.setTipoEvento("ENTRADA");
+        }
+
+        EnumTipoAcceso tipoAccesoEnum;
+        try {
+            tipoAccesoEnum = EnumTipoAcceso.valueOf(request.getTipoAcceso().toUpperCase());
+        } catch (IllegalArgumentException e) {
+            String error = "Formato inválido para tipoAcceso: " + request.getTipoAcceso() +
+                    ". Valores permitidos: WEB, APP, BIOMETRICO";
+            validationService.registrarIncidencia(tipoDato, request, error);
+            return new MessegeGlobalDTO("Error: " + error);
+        }
+
+        if (!"ENTRADA".equalsIgnoreCase(request.getTipoEvento()) &&
+                !"SALIDA".equalsIgnoreCase(request.getTipoEvento())) {
+            String error = "Formato inválido para tipoEvento: " + request.getTipoEvento() +
+                    ". Valores permitidos: ENTRADA, SALIDA";
+            validationService.registrarIncidencia(tipoDato, request, error);
+            return new MessegeGlobalDTO("Error: " + error);
         }
 
         EventoAcceso evento = new EventoAcceso();
         evento.setSocioIdentificacion(request.getSocioId());
         evento.setFechaRegistro(request.getFechaHora());
-        evento.setTipoAcceso(EnumTipoAcceso.valueOf(request.getTipoAcceso().toUpperCase()));
+        evento.setTipoAcceso(tipoAccesoEnum);
 
-       
         eventoAccesoRepository.save(evento);
-
         log.info("Evento de acceso guardado correctamente para socio ID: {}", request.getSocioId());
 
         return new MessegeGlobalDTO("Evento de acceso procesado correctamente");
