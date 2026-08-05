@@ -4,9 +4,9 @@ import com.itextpdf.kernel.colors.ColorConstants;
 import com.itextpdf.kernel.pdf.PdfDocument;
 import com.itextpdf.kernel.pdf.PdfWriter;
 import com.itextpdf.layout.Document;
-import com.itextpdf.layout.element.Cell;
 import com.itextpdf.layout.element.Paragraph;
 import com.itextpdf.layout.element.Table;
+import com.itextpdf.layout.properties.TextAlignment;
 import com.itextpdf.layout.properties.UnitValue;
 import com.pulse_gym.lb_common.entity.reports.EventoAcceso;
 import com.pulse_gym.ms_reports.repository.EventoAccesoRepository;
@@ -51,11 +51,11 @@ public class ExportacionAfluenciaService {
             document.add(new Paragraph("Reporte de Socios por Día")
                     .setFontSize(18)
                     .setBold()
-                    .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER));
+                    .setTextAlignment(TextAlignment.CENTER));
 
             document.add(new Paragraph("Fecha: " + fecha.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
                     .setFontSize(12)
-                    .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER));
+                    .setTextAlignment(TextAlignment.CENTER));
 
             document.add(new Paragraph(" "));
 
@@ -66,20 +66,32 @@ public class ExportacionAfluenciaService {
 
             document.add(new Paragraph(" "));
 
-            // Tabla
+            // --- Tabla (usamos nombres completos para evitar conflicto con POI) ---
             Table table = new Table(UnitValue.createPercentArray(new float[]{30, 30, 40}))
                     .setWidth(UnitValue.createPercentValue(100));
 
             // Encabezados
-            table.addCell(new Cell().add(new Paragraph("ID Socio").setBold()));
-            table.addCell(new Cell().add(new Paragraph("Tipo Acceso").setBold()));
-            table.addCell(new Cell().add(new Paragraph("Fecha/Hora").setBold()));
+            com.itextpdf.layout.element.Cell header1 = new com.itextpdf.layout.element.Cell()
+                    .add(new Paragraph("ID Socio").setBold());
+            com.itextpdf.layout.element.Cell header2 = new com.itextpdf.layout.element.Cell()
+                    .add(new Paragraph("Tipo Acceso").setBold());
+            com.itextpdf.layout.element.Cell header3 = new com.itextpdf.layout.element.Cell()
+                    .add(new Paragraph("Fecha/Hora").setBold());
+            table.addCell(header1);
+            table.addCell(header2);
+            table.addCell(header3);
 
             // Datos
             for (EventoAcceso acceso : accesos) {
-                table.addCell(new Cell().add(new Paragraph(acceso.getSocioIdentificacion().toString())));
-                table.addCell(new Cell().add(new Paragraph(acceso.getTipoAcceso() != null ? acceso.getTipoAcceso().name() : "N/A")));
-                table.addCell(new Cell().add(new Paragraph(acceso.getFechaRegistro().format(DATE_FORMATTER))));
+                com.itextpdf.layout.element.Cell cell1 = new com.itextpdf.layout.element.Cell()
+                        .add(new Paragraph(acceso.getSocioIdentificacion().toString()));
+                com.itextpdf.layout.element.Cell cell2 = new com.itextpdf.layout.element.Cell()
+                        .add(new Paragraph(acceso.getTipoAcceso() != null ? acceso.getTipoAcceso().name() : "N/A"));
+                com.itextpdf.layout.element.Cell cell3 = new com.itextpdf.layout.element.Cell()
+                        .add(new Paragraph(acceso.getFechaRegistro().format(DATE_FORMATTER)));
+                table.addCell(cell1);
+                table.addCell(cell2);
+                table.addCell(cell3);
             }
 
             document.add(table);
@@ -89,7 +101,7 @@ public class ExportacionAfluenciaService {
             document.add(new Paragraph("Reporte generado por Pulse Gym")
                     .setFontSize(10)
                     .setFontColor(ColorConstants.GRAY)
-                    .setTextAlignment(com.itextpdf.layout.properties.TextAlignment.CENTER));
+                    .setTextAlignment(TextAlignment.CENTER));
 
             document.close();
             return baos.toByteArray();
@@ -112,10 +124,9 @@ public class ExportacionAfluenciaService {
         try (Workbook workbook = new XSSFWorkbook();
              ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
 
-            // Usar Apache POI Cell y Sheet (sin conflictos porque están en paquete diferente)
             Sheet sheet = workbook.createSheet("Socios por día");
 
-            // Estilo para encabezados
+            // Estilo para encabezados (usamos POI)
             CellStyle headerStyle = workbook.createCellStyle();
             Font headerFont = workbook.createFont();
             headerFont.setBold(true);
@@ -123,17 +134,14 @@ public class ExportacionAfluenciaService {
             headerStyle.setFillForegroundColor(IndexedColors.GREY_25_PERCENT.getIndex());
             headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-            // Crear fila de encabezados
             Row headerRow = sheet.createRow(0);
             String[] headers = {"ID Socio", "Tipo Acceso", "Fecha/Hora"};
             for (int i = 0; i < headers.length; i++) {
                 org.apache.poi.ss.usermodel.Cell cell = headerRow.createCell(i);
                 cell.setCellValue(headers[i]);
                 cell.setCellStyle(headerStyle);
-                sheet.autoSizeColumn(i);
             }
 
-            // Datos
             int rowNum = 1;
             for (EventoAcceso acceso : accesos) {
                 Row row = sheet.createRow(rowNum++);
