@@ -19,8 +19,14 @@ import java.util.stream.Collectors;
 @Slf4j
 public class TendenciaAfluenciaService {
 
+    /**
+     * Repositorio para acceder a los eventos de acceso.
+     */
     private final EventoAccesoRepository eventoAccesoRepository;
 
+    /**
+     * Formateador para fechas.
+     */
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     /**

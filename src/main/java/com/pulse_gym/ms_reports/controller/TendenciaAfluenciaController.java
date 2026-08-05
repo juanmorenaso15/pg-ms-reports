@@ -18,6 +18,9 @@ import java.time.LocalDate;
 @Slf4j
 public class TendenciaAfluenciaController {
 
+    /**
+     * Servicio para obtener la tendencia de afluencia.
+     */
     private final TendenciaAfluenciaService tendenciaService;
 
     /**
