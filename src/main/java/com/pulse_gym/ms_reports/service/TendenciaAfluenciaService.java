@@ -32,7 +32,7 @@ public class TendenciaAfluenciaService {
     /**
      * Obtiene la tendencia de afluencia para un período (semanal o mensual).
      *
-     * @param tipoReporte "SEMANAL" o "MENSUAL"
+     * @param tipoReporte     "SEMANAL" o "MENSUAL"
      * @param fechaReferencia Fecha de referencia para el análisis
      * @return DTO con la tendencia
      */
@@ -44,8 +44,8 @@ public class TendenciaAfluenciaService {
         PeriodoDTO periodoActual = calcularPeriodo(tipoReporte, fechaReferencia);
         PeriodoDTO periodoAnterior = calcularPeriodoAnterior(tipoReporte, periodoActual);
 
-        log.info("Analizando tendencia {} para período: {} a {}", tipoReporte, 
-                 periodoActual.getInicio(), periodoActual.getFin());
+        log.info("Analizando tendencia {} para período: {} a {}", tipoReporte,
+                periodoActual.getInicio(), periodoActual.getFin());
 
         List<DatoPeriodoDTO> datosActuales = obtenerDatosPorPeriodo(periodoActual);
         List<DatoPeriodoDTO> datosAnteriores = obtenerDatosPorPeriodo(periodoAnterior);
@@ -120,11 +120,12 @@ public class TendenciaAfluenciaService {
         LocalDateTime inicio = periodo.getInicio().atStartOfDay();
         LocalDateTime fin = periodo.getFin().atTime(LocalTime.MAX);
 
-        List<Object[]> resultados = eventoAccesoRepository.countByDayGrouped(inicio, fin);
+        List<Object[]> resultados = eventoAccesoRepository.countByDayBetween(inicio, fin);
 
         return resultados.stream()
                 .map(obj -> {
-                    LocalDate fecha = (LocalDate) obj[0];
+                    java.sql.Date sqlDate = (java.sql.Date) obj[0];
+                    LocalDate fecha = sqlDate.toLocalDate();
                     Long total = ((Number) obj[1]).longValue();
                     return new DatoPeriodoDTO(fecha, fecha.format(DATE_FORMATTER), total);
                 })
@@ -150,7 +151,12 @@ public class TendenciaAfluenciaService {
             this.fin = fin;
         }
 
-        public LocalDate getInicio() { return inicio; }
-        public LocalDate getFin() { return fin; }
+        public LocalDate getInicio() {
+            return inicio;
+        }
+
+        public LocalDate getFin() {
+            return fin;
+        }
     }
 }
