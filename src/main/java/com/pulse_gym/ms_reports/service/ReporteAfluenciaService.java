@@ -19,7 +19,8 @@ public class ReporteAfluenciaService {
 
     /**
      * Obtiene el total de socios que ingresaron en una fecha específica.
-     * Considera solo eventos de tipo ENTRADA (o todos los accesos, según requieras).
+     * Considera solo eventos de tipo ENTRADA (o todos los accesos, según
+     * requieras).
      * 
      * @param fecha Fecha a consultar
      * @return DTO con la fecha y el total de socios
@@ -40,6 +41,25 @@ public class ReporteAfluenciaService {
             dto.setMensaje("No hay registros en la fecha seleccionada");
         }
 
+        return dto;
+    }
+
+    /**
+     *  Obtiene el total de socios que ingresaron hoy.
+     * Considera solo eventos de tipo ENTRADA (o todos los accesos, según
+     * requieras).
+     * @return DTO con la fecha y el total de socios
+     */
+    public ReporteSociosPorDiaDTO obtenerSociosHoy() {
+        LocalDate hoy = LocalDate.now();
+        log.info("Consultando ingresos del día: {}", hoy);
+        Long total = eventoAccesoRepository.countByFechaRegistro(hoy);
+        ReporteSociosPorDiaDTO dto = new ReporteSociosPorDiaDTO();
+        dto.setFecha(hoy);
+        dto.setTotalSocios(total != null ? total : 0L);
+        if (total == null || total == 0) {
+            dto.setMensaje("No hay ingresos registrados hoy");
+        }
         return dto;
     }
 }
