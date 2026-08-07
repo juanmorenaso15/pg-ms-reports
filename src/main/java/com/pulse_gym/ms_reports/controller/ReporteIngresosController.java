@@ -1,6 +1,7 @@
 package com.pulse_gym.ms_reports.controller;
 
 import com.pulse_gym.lb_common.dto.ReporteIngresosDiariosDTO;
+import com.pulse_gym.lb_common.dto.ReporteIngresosMensualesDTO;
 import com.pulse_gym.lb_common.exception.SecurityAuthorizationException;
 import com.pulse_gym.lb_common.services.ValidacionDeRoles;
 import com.pulse_gym.lb_common.entity.reports.EventoPago;
@@ -42,7 +43,7 @@ public class ReporteIngresosController {
     /**
      * Obtiene el reporte de ingresos diarios para una fecha específica.
      *
-     * @param fecha La fecha para la cual se desea obtener el reporte.
+     * @param fecha   La fecha para la cual se desea obtener el reporte.
      * @param userRol El rol del usuario que realiza la solicitud (opcional).
      * @return Un objeto ReporteIngresosDiariosDTO con los detalles del reporte.
      */
@@ -70,7 +71,7 @@ public class ReporteIngresosController {
     /**
      * Exporta el reporte de ingresos diarios a PDF.
      * 
-     * @param fecha La fecha para la cual se desea exportar el reporte.
+     * @param fecha   La fecha para la cual se desea exportar el reporte.
      * @param userRol El rol del usuario que realiza la solicitud (opcional).
      * @return Un arreglo de bytes que representa el archivo PDF generado.
      */
@@ -99,7 +100,7 @@ public class ReporteIngresosController {
     /**
      * Exporta el reporte de ingresos diarios a Excel.
      *
-     * @param fecha La fecha para la cual se desea exportar el reporte.
+     * @param fecha   La fecha para la cual se desea exportar el reporte.
      * @param userRol El rol del usuario que realiza la solicitud (opcional).
      * @return Un arreglo de bytes que representa el archivo Excel generado.
      */
@@ -126,6 +127,12 @@ public class ReporteIngresosController {
                 .body(excelBytes);
     }
 
+    /**
+     * Valida el rol del usuario para acceder a los reportes de ingresos.
+     *
+     * @param userRol El rol del usuario que realiza la solicitud.
+     * @throws SecurityAuthorizationException Si el usuario no tiene permisos para acceder al recurso.
+     */
     private void validarRol(String userRol) {
         try {
             ValidacionDeRoles.validarAdmin(userRol);
@@ -133,5 +140,95 @@ public class ReporteIngresosController {
             log.warn("Intento de acceso no autorizado a reporte de ingresos: {}", e.getMessage());
             throw e;
         }
+    }
+
+    /**
+     * Obtiene el reporte de ingresos mensuales para un mes y año específicos.
+     *
+     * @param mes     El mes para el cual se desea obtener el reporte (1-12).
+     * @param anio    El año para el cual se desea obtener el reporte.
+     * @param userRol El rol del usuario que realiza la solicitud (opcional).
+     * @return Un objeto ReporteIngresosMensualesDTO con los detalles del reporte.
+     */
+    @GetMapping("/mensuales")
+    public ResponseEntity<ReporteIngresosMensualesDTO> obtenerIngresosMensuales(
+            @RequestParam Long mes,
+            @RequestParam Long anio,
+            @RequestHeader(value = "X-User-Rol", required = false) String userRol) {
+
+        validarRol(userRol);
+
+        if (mes < 1 || mes > 12) {
+            throw new IllegalArgumentException("El mes debe estar entre 1 y 12");
+        }
+
+        log.info("Consultando ingresos mensuales: {}/{}", mes, anio);
+        long startTime = System.currentTimeMillis();
+
+        ReporteIngresosMensualesDTO dto = reporteIngresosService.obtenerIngresosMensuales(mes, anio);
+
+        long elapsed = System.currentTimeMillis() - startTime;
+        if (elapsed > 5000) {
+            log.warn("Tiempo de respuesta > 5 segundos: {} ms", elapsed);
+        }
+
+        return ResponseEntity.ok(dto);
+    }
+
+    /**
+     * Exporta el reporte de ingresos mensuales a PDF.
+     *
+     * @param mes     El mes para el cual se desea exportar el reporte (1-12).
+     * @param anio    El año para el cual se desea exportar el reporte.
+     * @param userRol El rol del usuario que realiza la solicitud (opcional).
+     * @return Un arreglo de bytes que representa el archivo PDF generado.
+     */
+    @GetMapping(value = "/mensuales/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> exportarPDFMensual(
+            @RequestParam Long mes,
+            @RequestParam Long anio,
+            @RequestHeader(value = "X-User-Rol", required = false) String userRol) {
+
+        validarRol(userRol);
+
+        log.info("Exportando PDF de ingresos mensuales: {}/{}", mes, anio);
+
+        ReporteIngresosMensualesDTO dto = reporteIngresosService.obtenerIngresosMensuales(mes, anio);
+        byte[] pdfBytes = exportacionIngresosService.generarPDFIngresosMensuales(dto);
+
+        String filename = String.format("ingresos_mensuales_%d%02d.pdf", anio, mes);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
+    }
+
+    /**
+     * Exporta el reporte de ingresos mensuales a Excel.
+     *
+     * @param mes     El mes para el cual se desea exportar el reporte (1-12).
+     * @param anio    El año para el cual se desea exportar el reporte.
+     * @param userRol El rol del usuario que realiza la solicitud (opcional).
+     * @return Un arreglo de bytes que representa el archivo Excel generado.
+     */
+    @GetMapping(value = "/mensuales/excel", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    public ResponseEntity<byte[]> exportarExcelMensual(
+            @RequestParam Long mes,
+            @RequestParam Long anio,
+            @RequestHeader(value = "X-User-Rol", required = false) String userRol) {
+
+        validarRol(userRol);
+
+        log.info("Exportando Excel de ingresos mensuales: {}/{}", mes, anio);
+
+        ReporteIngresosMensualesDTO dto = reporteIngresosService.obtenerIngresosMensuales(mes, anio);
+        byte[] excelBytes = exportacionIngresosService.generarExcelIngresosMensuales(dto);
+
+        String filename = String.format("ingresos_mensuales_%d%02d.xlsx", anio, mes);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excelBytes);
     }
 }
