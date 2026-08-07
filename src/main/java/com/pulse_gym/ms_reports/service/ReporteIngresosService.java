@@ -112,4 +112,30 @@ public class ReporteIngresosService {
 
         return new ReporteIngresosMensualesDTO(mes, anio, detalle, totalGeneral, null);
     }
+
+    public ReporteIngresosMensualesDTO obtenerIngresosPorMembresia(LocalDate fechaInicio, LocalDate fechaFin) {
+        LocalDateTime inicio = fechaInicio.atStartOfDay();
+        LocalDateTime fin = fechaFin.atTime(LocalTime.MAX);
+
+        List<Object[]> resultados = eventoPagoRepository.sumMontoByTipoMembresiaBetween(inicio, fin);
+
+        List<MembresiaIngresoDTO> detalle = new ArrayList<>();
+        BigDecimal totalGeneral = BigDecimal.ZERO;
+
+        if (resultados == null || resultados.isEmpty()) {
+            return new ReporteIngresosMensualesDTO(0L, 0L, Collections.emptyList(), BigDecimal.ZERO,
+                    "No hay ingresos en el período seleccionado");
+        }
+
+        for (Object[] row : resultados) {
+            String tipo = (String) row[0];
+            BigDecimal monto = (BigDecimal) row[1];
+            if (monto == null)
+                monto = BigDecimal.ZERO;
+            detalle.add(new MembresiaIngresoDTO(tipo, monto));
+            totalGeneral = totalGeneral.add(monto);
+        }
+
+        return new ReporteIngresosMensualesDTO(0L, 0L, detalle, totalGeneral, null);
+    }
 }

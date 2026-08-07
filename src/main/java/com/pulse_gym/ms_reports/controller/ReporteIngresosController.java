@@ -131,7 +131,8 @@ public class ReporteIngresosController {
      * Valida el rol del usuario para acceder a los reportes de ingresos.
      *
      * @param userRol El rol del usuario que realiza la solicitud.
-     * @throws SecurityAuthorizationException Si el usuario no tiene permisos para acceder al recurso.
+     * @throws SecurityAuthorizationException Si el usuario no tiene permisos para
+     *                                        acceder al recurso.
      */
     private void validarRol(String userRol) {
         try {
@@ -225,6 +226,72 @@ public class ReporteIngresosController {
         byte[] excelBytes = exportacionIngresosService.generarExcelIngresosMensuales(dto);
 
         String filename = String.format("ingresos_mensuales_%d%02d.xlsx", anio, mes);
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .body(excelBytes);
+    }
+
+    @GetMapping("/por-membresia")
+    public ResponseEntity<ReporteIngresosMensualesDTO> obtenerIngresosPorMembresia(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
+            @RequestHeader(value = "X-User-Rol", required = false) String userRol) {
+
+        validarRol(userRol);
+
+        if (fechaInicio.isAfter(fechaFin)) {
+            throw new IllegalArgumentException("La fecha de inicio no puede ser posterior a la fecha fin");
+        }
+
+        log.info("Consultando ingresos por membresía entre {} y {}", fechaInicio, fechaFin);
+        long startTime = System.currentTimeMillis();
+
+        ReporteIngresosMensualesDTO dto = reporteIngresosService.obtenerIngresosPorMembresia(fechaInicio, fechaFin);
+
+        long elapsed = System.currentTimeMillis() - startTime;
+        if (elapsed > 5000) {
+            log.warn("Tiempo de respuesta > 5 segundos: {} ms", elapsed);
+        }
+
+        return ResponseEntity.ok(dto);
+    }
+
+    @GetMapping(value = "/por-membresia/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
+    public ResponseEntity<byte[]> exportarPDFPorMembresia(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
+            @RequestHeader(value = "X-User-Rol", required = false) String userRol) {
+
+        validarRol(userRol);
+        ReporteIngresosMensualesDTO dto = reporteIngresosService.obtenerIngresosPorMembresia(fechaInicio, fechaFin);
+        byte[] pdfBytes = exportacionIngresosService.generarPDFIngresosPorMembresia(dto, fechaInicio, fechaFin);
+
+        String filename = String.format("ingresos_por_membresia_%s_%s.pdf",
+                fechaInicio.format(DateTimeFormatter.ofPattern("yyyyMMdd")),
+                fechaFin.format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(pdfBytes);
+    }
+
+    @GetMapping(value = "/por-membresia/excel", produces = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+    public ResponseEntity<byte[]> exportarExcelPorMembresia(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaInicio,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fechaFin,
+            @RequestHeader(value = "X-User-Rol", required = false) String userRol) {
+
+        validarRol(userRol);
+        ReporteIngresosMensualesDTO dto = reporteIngresosService.obtenerIngresosPorMembresia(fechaInicio, fechaFin);
+        byte[] excelBytes = exportacionIngresosService.generarExcelIngresosPorMembresia(dto, fechaInicio, fechaFin);
+
+        String filename = String.format("ingresos_por_membresia_%s_%s.xlsx",
+                fechaInicio.format(DateTimeFormatter.ofPattern("yyyyMMdd")),
+                fechaFin.format(DateTimeFormatter.ofPattern("yyyyMMdd")));
+
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(
