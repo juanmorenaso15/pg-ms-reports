@@ -21,7 +21,8 @@ public class ReporteAfluenciaController {
     private final ReporteAfluenciaService reporteAfluenciaService;
 
     /**
-     * Endpoint para obtener el total de socios que ingresaron en una fecha específica.
+     * Endpoint para obtener el total de socios que ingresaron en una fecha
+     * específica.
      * Solo accesible para Administradores o Recepcionistas.
      *
      * @param fecha   Fecha en formato ISO (yyyy-MM-dd)
@@ -53,6 +54,27 @@ public class ReporteAfluenciaController {
             log.warn("El tiempo de respuesta del reporte excedió los 3 segundos: {} ms", elapsedTime);
         }
 
+        return ResponseEntity.ok(resultado);
+    }
+
+    /**
+     * Endpoint para obtener el total de socios que ingresaron hoy.
+     * Solo accesible para Administradores o Recepcionistas.
+     * 
+     * @param userRol Rol del usuario autenticado (header X-User-Rol)
+     * @return DTO con el total de socios
+     */
+    @GetMapping("/hoy")
+    public ResponseEntity<ReporteSociosPorDiaDTO> obtenerSociosHoy(
+            @RequestHeader(value = "X-User-Rol", required = false) String userRol) {
+        try {
+            ValidacionDeRoles.validarAdminORecepcionista(userRol);
+        } catch (SecurityAuthorizationException e) {
+            log.warn("Intento de acceso no autorizado a reporte de hoy: {}", e.getMessage());
+            throw e;
+        }
+        log.info("Consultando ingresos del día actual");
+        ReporteSociosPorDiaDTO resultado = reporteAfluenciaService.obtenerSociosHoy();
         return ResponseEntity.ok(resultado);
     }
 }
