@@ -1,0 +1,22 @@
+spring:
+  datasource:
+    url: ${LOCAL_URL_REPORTS}
+    username: ${LOCAL_USER}
+    password: ${LOCAL_PASSWORD}
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        default_schema: ${REPORTS_SCHEMA:reports_schema}
+  cloud:
+    consul:
+      host: ${CONSUL_HOST:consul}
+      port: ${CONSUL_PORT:8500}
+      discovery:
+        register: true
+        health-check-path: /actuator/health
+        prefer-ip-address: false
+        instance-id: ${spring.application.name}
