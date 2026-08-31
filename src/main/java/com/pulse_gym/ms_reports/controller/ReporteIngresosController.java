@@ -2,6 +2,7 @@ package com.pulse_gym.ms_reports.controller;
 
 import com.pulse_gym.lb_common.dto.ReporteIngresosDiariosDTO;
 import com.pulse_gym.lb_common.dto.ReporteIngresosMensualesDTO;
+import com.pulse_gym.lb_common.dto.ReporteIngresosUltimosSeisMesesDTO;
 import com.pulse_gym.lb_common.exception.SecurityAuthorizationException;
 import com.pulse_gym.lb_common.services.ValidacionDeRoles;
 import com.pulse_gym.lb_common.entity.reports.EventoPago;
@@ -297,5 +298,19 @@ public class ReporteIngresosController {
                 .contentType(
                         MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .body(excelBytes);
+    }
+
+    /**
+     * Obtiene el reporte de ingresos de los últimos seis meses
+     * 
+     * @param userRol Rol del usuario autenticado (header)
+     * @return DTO con el reporte de ingresos mensuales y total acumulado
+     */
+    @GetMapping("/ultimos-seis-meses")
+    public ResponseEntity<ReporteIngresosUltimosSeisMesesDTO> obtenerIngresosUltimosSeisMeses(
+            @RequestHeader(value = "X-User-Rol", required = false) String userRol) {
+        validarRol(userRol);
+        ReporteIngresosUltimosSeisMesesDTO dto = reporteIngresosService.obtenerIngresosUltimosSeisMeses();
+        return ResponseEntity.ok(dto);
     }
 }
