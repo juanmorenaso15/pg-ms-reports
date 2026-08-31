@@ -3,6 +3,7 @@ package com.pulse_gym.ms_reports.service;
 import com.pulse_gym.lb_common.dto.MembresiaIngresoDTO;
 import com.pulse_gym.lb_common.dto.ReporteIngresosDiariosDTO;
 import com.pulse_gym.lb_common.dto.ReporteIngresosMensualesDTO;
+import com.pulse_gym.lb_common.dto.ReporteIngresosUltimosSeisMesesDTO;
 import com.pulse_gym.lb_common.entity.reports.EventoPago;
 import com.pulse_gym.ms_reports.repository.EventoPagoRepository;
 import lombok.RequiredArgsConstructor;
@@ -137,5 +138,34 @@ public class ReporteIngresosService {
         }
 
         return new ReporteIngresosMensualesDTO(0L, 0L, detalle, totalGeneral, null);
+    }
+
+    /**
+     * Obtiene el reporte de ingresos de los últimos seis meses
+     * 
+     * @return DTO con el reporte de ingresos mensuales y total acumulado
+     */
+    public ReporteIngresosUltimosSeisMesesDTO obtenerIngresosUltimosSeisMeses() {
+        LocalDate hoy = LocalDate.now();
+        LocalDate hace6Meses = hoy.minusMonths(5).withDayOfMonth(1);
+
+        LocalDateTime inicio = hace6Meses.atStartOfDay();
+        LocalDateTime fin = hoy.withDayOfMonth(hoy.lengthOfMonth()).atTime(LocalTime.MAX);
+
+        List<ReporteIngresosMensualesDTO> meses = new ArrayList<>();
+        BigDecimal totalAcumulado = BigDecimal.ZERO;
+
+        for (int i = 5; i >= 0; i--) {
+            LocalDate fechaMes = hoy.minusMonths(i);
+            ReporteIngresosMensualesDTO dtoMes = obtenerIngresosMensuales(
+                    (long) fechaMes.getMonthValue(),
+                    (long) fechaMes.getYear());
+            meses.add(dtoMes);
+            if (dtoMes.getTotalGeneral() != null) {
+                totalAcumulado = totalAcumulado.add(dtoMes.getTotalGeneral());
+            }
+        }
+
+        return new ReporteIngresosUltimosSeisMesesDTO(meses, totalAcumulado);
     }
 }
