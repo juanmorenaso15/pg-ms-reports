@@ -87,4 +87,21 @@ public class EventoPagoService {
 
         return new MessegeGlobalDTO("Evento de pago procesado correctamente");
     }
+
+    @Transactional
+    public MessegeGlobalDTO anularEventoPago(Long socioId, LocalDateTime fechaPago) {
+        String socioIdStr = socioId.toString();
+        EventoPago evento = eventoPagoRepository.findBySocioIdentificadorAndFechaPago(socioIdStr, fechaPago)
+                .orElse(null);
+
+        if (evento != null) {
+            evento.setAnulado(true);
+            eventoPagoRepository.save(evento);
+            log.info("Evento de pago marcado como anulado para socio ID: {} en fecha: {}", socioId, fechaPago);
+            return new MessegeGlobalDTO("Evento de pago anulado correctamente en reportes");
+        }
+        
+        log.warn("No se encontró el evento de pago para anular con socio ID: {} y fecha: {}", socioId, fechaPago);
+        return new MessegeGlobalDTO("Evento de pago no encontrado en reportes para anular");
+    }
 }

@@ -87,33 +87,44 @@ public class ReporteIngresosService {
         LocalDateTime inicio = inicioMes.atStartOfDay();
         LocalDateTime fin = finMes.atTime(LocalTime.MAX);
 
-        log.info("Consultando ingresos mensuales: {}/{}", mes, anio);
+        log.info("Consultando ingresos mensuales de membresías: {}/{}", mes, anio);
 
         List<Object[]> resultados = eventoPagoRepository.sumMontoByTipoMembresiaBetween(inicio, fin);
 
         List<MembresiaIngresoDTO> detalle = new ArrayList<>();
         BigDecimal totalGeneral = BigDecimal.ZERO;
 
-        if (resultados == null || resultados.isEmpty()) {
+        if (resultados != null) {
+            for (Object[] row : resultados) {
+                String tipo = (String) row[0];
+                BigDecimal monto = (BigDecimal) row[1];
+                
+                if (tipo != null && !tipo.trim().isEmpty() && !tipo.toLowerCase().contains("producto")) {
+                    if (monto == null) monto = BigDecimal.ZERO;
+                    detalle.add(new MembresiaIngresoDTO(tipo, monto));
+                    totalGeneral = totalGeneral.add(monto);
+                }
+            }
+        }
+
+        if (detalle.isEmpty()) {
             return new ReporteIngresosMensualesDTO(
                     mes, anio,
                     Collections.emptyList(),
                     BigDecimal.ZERO,
-                    "No hay pagos registrados en este mes");
-        }
-
-        for (Object[] row : resultados) {
-            String tipo = (String) row[0];
-            BigDecimal monto = (BigDecimal) row[1];
-            if (monto == null)
-                monto = BigDecimal.ZERO;
-            detalle.add(new MembresiaIngresoDTO(tipo, monto));
-            totalGeneral = totalGeneral.add(monto);
+                    "No hay pagos de membresías registrados en este mes");
         }
 
         return new ReporteIngresosMensualesDTO(mes, anio, detalle, totalGeneral, null);
     }
 
+    /**
+     * Obtiene el reporte de ingresos por tipo de membresía en un rango de fechas.
+     *
+     * @param fechaInicio Fecha de inicio del rango.
+     * @param fechaFin    Fecha de fin del rango.
+     * @return Un objeto ReporteIngresosMensualesDTO con los detalles del reporte.
+     */
     public ReporteIngresosMensualesDTO obtenerIngresosPorMembresia(LocalDate fechaInicio, LocalDate fechaFin) {
         LocalDateTime inicio = fechaInicio.atStartOfDay();
         LocalDateTime fin = fechaFin.atTime(LocalTime.MAX);
@@ -123,18 +134,22 @@ public class ReporteIngresosService {
         List<MembresiaIngresoDTO> detalle = new ArrayList<>();
         BigDecimal totalGeneral = BigDecimal.ZERO;
 
-        if (resultados == null || resultados.isEmpty()) {
-            return new ReporteIngresosMensualesDTO(0L, 0L, Collections.emptyList(), BigDecimal.ZERO,
-                    "No hay ingresos en el período seleccionado");
+        if (resultados != null) {
+            for (Object[] row : resultados) {
+                String tipo = (String) row[0];
+                BigDecimal monto = (BigDecimal) row[1];
+                
+                if (tipo != null && !tipo.trim().isEmpty() && !tipo.toLowerCase().contains("producto")) {
+                    if (monto == null) monto = BigDecimal.ZERO;
+                    detalle.add(new MembresiaIngresoDTO(tipo, monto));
+                    totalGeneral = totalGeneral.add(monto);
+                }
+            }
         }
 
-        for (Object[] row : resultados) {
-            String tipo = (String) row[0];
-            BigDecimal monto = (BigDecimal) row[1];
-            if (monto == null)
-                monto = BigDecimal.ZERO;
-            detalle.add(new MembresiaIngresoDTO(tipo, monto));
-            totalGeneral = totalGeneral.add(monto);
+        if (detalle.isEmpty()) {
+            return new ReporteIngresosMensualesDTO(0L, 0L, Collections.emptyList(), BigDecimal.ZERO,
+                    "No hay ingresos de membresías en el período seleccionado");
         }
 
         return new ReporteIngresosMensualesDTO(0L, 0L, detalle, totalGeneral, null);
@@ -148,9 +163,6 @@ public class ReporteIngresosService {
     public ReporteIngresosUltimosSeisMesesDTO obtenerIngresosUltimosSeisMeses() {
         LocalDate hoy = LocalDate.now();
         LocalDate hace6Meses = hoy.minusMonths(5).withDayOfMonth(1);
-
-        LocalDateTime inicio = hace6Meses.atStartOfDay();
-        LocalDateTime fin = hoy.withDayOfMonth(hoy.lengthOfMonth()).atTime(LocalTime.MAX);
 
         List<ReporteIngresosMensualesDTO> meses = new ArrayList<>();
         BigDecimal totalAcumulado = BigDecimal.ZERO;
