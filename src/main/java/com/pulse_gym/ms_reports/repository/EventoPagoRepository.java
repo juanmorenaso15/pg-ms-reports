@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface EventoPagoRepository extends JpaRepository<EventoPago, Long> {
 
@@ -22,13 +23,14 @@ public interface EventoPagoRepository extends JpaRepository<EventoPago, Long> {
        List<EventoPago> findBySocioIdentificador(String socioIdentificador);
 
        /**
-        * Busca eventos de pago por rango de fechas (fechaPago).
+        * Busca eventos de pago en un rango de fechas.
         *
-        * @param inicio Fecha inicio del rango
-        * @param fin    Fecha fin del rango
+        * @param inicio Fecha inicio
+        * @param fin    Fecha fin
         * @return Lista de eventos de pago
         */
-       List<EventoPago> findByFechaPagoBetween(LocalDateTime inicio, LocalDateTime fin);
+       @Query("SELECT e FROM EventoPago e WHERE e.fechaPago BETWEEN :inicio AND :fin AND (e.anulado = false OR e.anulado IS NULL)")
+       List<EventoPago> findByFechaPagoBetween(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
        /**
         * Busca eventos de pago por tipo de membresía.
@@ -46,14 +48,7 @@ public interface EventoPagoRepository extends JpaRepository<EventoPago, Long> {
         */
        List<EventoPago> findByMetodoPago(String metodoPago);
 
-       /**
-        * Calcula el total de ingresos (suma de montos) en un rango de fechas.
-        *
-        * @param inicio Fecha inicio
-        * @param fin    Fecha fin
-        * @return Suma total de montos
-        */
-       @Query("SELECT SUM(e.monto) FROM EventoPago e WHERE e.fechaPago BETWEEN :inicio AND :fin")
+       @Query("SELECT SUM(e.monto) FROM EventoPago e WHERE e.fechaPago BETWEEN :inicio AND :fin AND (e.anulado = false OR e.anulado IS NULL)")
        BigDecimal sumMontoByFechaPagoBetween(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
 
        /**
@@ -66,17 +61,12 @@ public interface EventoPagoRepository extends JpaRepository<EventoPago, Long> {
        @Query("SELECT e.tipoMembresia, SUM(e.monto) " +
                      "FROM EventoPago e " +
                      "WHERE e.fechaPago BETWEEN :inicio AND :fin " +
+                     "AND (e.anulado = false OR e.anulado IS NULL) " +
                      "GROUP BY e.tipoMembresia")
        List<Object[]> sumMontoByTipoMembresiaBetween(@Param("inicio") LocalDateTime inicio,
                      @Param("fin") LocalDateTime fin);
 
-       /**
-        * Cuenta la cantidad de pagos en una fecha específica.
-        *
-        * @param fecha Fecha a consultar (se usa la parte de fecha de fechaPago)
-        * @return Número de pagos en esa fecha
-        */
-       @Query("SELECT COUNT(e) FROM EventoPago e WHERE DATE(e.fechaPago) = :fecha")
+       @Query("SELECT COUNT(e) FROM EventoPago e WHERE DATE(e.fechaPago) = :fecha AND (e.anulado = false OR e.anulado IS NULL)")
        Long countByFechaPago(@Param("fecha") LocalDate fecha);
 
        /**
@@ -89,6 +79,7 @@ public interface EventoPagoRepository extends JpaRepository<EventoPago, Long> {
        @Query("SELECT DATE(e.fechaPago) as fecha, COUNT(e) as total " +
                      "FROM EventoPago e " +
                      "WHERE e.fechaPago BETWEEN :inicio AND :fin " +
+                     "AND (e.anulado = false OR e.anulado IS NULL) " +
                      "GROUP BY DATE(e.fechaPago) " +
                      "ORDER BY DATE(e.fechaPago)")
        List<Object[]> countByDayBetween(@Param("inicio") LocalDateTime inicio, @Param("fin") LocalDateTime fin);
@@ -103,4 +94,6 @@ public interface EventoPagoRepository extends JpaRepository<EventoPago, Long> {
        @Modifying
        @Query("DELETE FROM EventoPago e WHERE e.fechaPago < :fecha")
        long deleteAllByFechaPagoBefore(@Param("fecha") LocalDateTime fecha);
+
+       Optional<EventoPago> findBySocioIdentificadorAndFechaPago(String socioIdentificador, LocalDateTime fechaPago);
 }
