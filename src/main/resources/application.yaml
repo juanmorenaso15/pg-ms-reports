@@ -45,4 +45,3 @@ security:
 biometric:
   jwt:
     secret-key: ${BIOMETRIC_JWT_SECRET}
-  
