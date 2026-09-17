@@ -18,6 +18,9 @@ spring:
       hibernate:
         default_schema: reports_schema
 
+  jackson:
+    time-zone: America/Bogota 
+
   cloud:
     consul:
       host: consul

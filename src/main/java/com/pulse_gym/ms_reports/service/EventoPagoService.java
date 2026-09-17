@@ -69,7 +69,7 @@ public class EventoPagoService {
             return new MessegeGlobalDTO("Error: " + error);
         }
 
-        if (request.getFechaPago().isAfter(LocalDateTime.now())) {
+        if (request.getFechaPago().isAfter(com.pulse_gym.lb_common.util.FechaUtils.ahoraColombia())) {
             String error = "Fecha de pago futura no permitida: " + request.getFechaPago();
             validationService.registrarIncidencia(tipoDato, request, error);
             return new MessegeGlobalDTO("Error: " + error);

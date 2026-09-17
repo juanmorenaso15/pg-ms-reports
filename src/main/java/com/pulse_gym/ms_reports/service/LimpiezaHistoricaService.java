@@ -27,7 +27,7 @@ public class LimpiezaHistoricaService {
     @Scheduled(cron = "0 0 2 1 * ?") // Primer día de cada mes a las 2 AM
     @Transactional
     public void limpiarDatosHistoricos() {
-        LocalDateTime fechaCorte = LocalDateTime.now().minusYears(2);
+        LocalDateTime fechaCorte = com.pulse_gym.lb_common.util.FechaUtils.ahoraColombia().minusYears(2);
         log.info("Iniciando limpieza de datos históricos anteriores a: {}", fechaCorte);
 
         try {

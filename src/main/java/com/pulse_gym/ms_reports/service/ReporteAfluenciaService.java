@@ -51,7 +51,7 @@ public class ReporteAfluenciaService {
      * @return DTO con la fecha y el total de socios
      */
     public ReporteSociosPorDiaDTO obtenerSociosHoy() {
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = com.pulse_gym.lb_common.util.FechaUtils.ahoraColombia().toLocalDate();
         log.info("Consultando ingresos del día: {}", hoy);
         Long total = eventoAccesoRepository.countByFechaRegistro(hoy);
         ReporteSociosPorDiaDTO dto = new ReporteSociosPorDiaDTO();

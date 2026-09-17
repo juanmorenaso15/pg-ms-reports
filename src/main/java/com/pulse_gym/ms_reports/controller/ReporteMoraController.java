@@ -56,7 +56,7 @@ public class ReporteMoraController {
         ReporteMoraResponseDTO dto = reporteMoraService.obtenerSociosEnMora(fechaInicio, fechaFin);
         byte[] pdf = exportacionMoraService.generarPDFMora(dto, fechaInicio, fechaFin);
 
-        String filename = "socios_mora_" + LocalDate.now().format(FILE_DATE_FORMATTER) + ".pdf";
+        String filename = "socios_mora_" + com.pulse_gym.lb_common.util.FechaUtils.ahoraColombia().toLocalDate().format(FILE_DATE_FORMATTER) + ".pdf";
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
@@ -75,7 +75,7 @@ public class ReporteMoraController {
         ReporteMoraResponseDTO dto = reporteMoraService.obtenerSociosEnMora(fechaInicio, fechaFin);
         byte[] excel = exportacionMoraService.generarExcelMora(dto, fechaInicio, fechaFin);
 
-        String filename = "socios_mora_" + LocalDate.now().format(FILE_DATE_FORMATTER) + ".xlsx";
+        String filename = "socios_mora_" + com.pulse_gym.lb_common.util.FechaUtils.ahoraColombia().toLocalDate().format(FILE_DATE_FORMATTER) + ".xlsx";
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
