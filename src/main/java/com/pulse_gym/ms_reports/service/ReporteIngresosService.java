@@ -161,7 +161,7 @@ public class ReporteIngresosService {
      * @return DTO con el reporte de ingresos mensuales y total acumulado
      */
     public ReporteIngresosUltimosSeisMesesDTO obtenerIngresosUltimosSeisMeses() {
-        LocalDate hoy = LocalDate.now();
+        LocalDate hoy = com.pulse_gym.lb_common.util.FechaUtils.ahoraColombia().toLocalDate();
         LocalDate hace6Meses = hoy.minusMonths(5).withDayOfMonth(1);
 
         List<ReporteIngresosMensualesDTO> meses = new ArrayList<>();

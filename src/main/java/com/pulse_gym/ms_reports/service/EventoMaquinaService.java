@@ -49,7 +49,7 @@ public class EventoMaquinaService {
         if (request.getFechaReporte() == null) {
             String error = "Campo obligatorio faltante: fechaReporte. Se asigna fecha actual.";
             validationService.registrarIncidencia(tipoDato, request, error);
-            request.setFechaReporte(LocalDate.now());
+            request.setFechaReporte(com.pulse_gym.lb_common.util.FechaUtils.ahoraColombia().toLocalDate());
         }
 
         EnumEstado estadoEnum;
@@ -62,7 +62,7 @@ public class EventoMaquinaService {
             return new MessegeGlobalDTO("Error: " + error);
         }
 
-        if (request.getFechaReporte().isAfter(LocalDate.now())) {
+        if (request.getFechaReporte().isAfter(com.pulse_gym.lb_common.util.FechaUtils.ahoraColombia().toLocalDate())) {
             String error = "Fecha de reporte futura no permitida: " + request.getFechaReporte();
             validationService.registrarIncidencia(tipoDato, request, error);
             return new MessegeGlobalDTO("Error: " + error);
