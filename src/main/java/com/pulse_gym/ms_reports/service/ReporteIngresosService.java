@@ -87,7 +87,7 @@ public class ReporteIngresosService {
         LocalDateTime inicio = inicioMes.atStartOfDay();
         LocalDateTime fin = finMes.atTime(LocalTime.MAX);
 
-        log.info("Consultando ingresos mensuales de membresías: {}/{}", mes, anio);
+        log.info("Consultando ingresos mensuales de membresías (solo aprobados/no anulados): {}/{}", mes, anio);
 
         List<Object[]> resultados = eventoPagoRepository.sumMontoByTipoMembresiaBetween(inicio, fin);
 
@@ -98,9 +98,10 @@ public class ReporteIngresosService {
             for (Object[] row : resultados) {
                 String tipo = (String) row[0];
                 BigDecimal monto = (BigDecimal) row[1];
-                
+
                 if (tipo != null && !tipo.trim().isEmpty() && !tipo.toLowerCase().contains("producto")) {
-                    if (monto == null) monto = BigDecimal.ZERO;
+                    if (monto == null)
+                        monto = BigDecimal.ZERO;
                     detalle.add(new MembresiaIngresoDTO(tipo, monto));
                     totalGeneral = totalGeneral.add(monto);
                 }
@@ -112,7 +113,7 @@ public class ReporteIngresosService {
                     mes, anio,
                     Collections.emptyList(),
                     BigDecimal.ZERO,
-                    "No hay pagos de membresías registrados en este mes");
+                    "No hay pagos de membresías válidos registrados en este mes");
         }
 
         return new ReporteIngresosMensualesDTO(mes, anio, detalle, totalGeneral, null);
@@ -138,9 +139,10 @@ public class ReporteIngresosService {
             for (Object[] row : resultados) {
                 String tipo = (String) row[0];
                 BigDecimal monto = (BigDecimal) row[1];
-                
+
                 if (tipo != null && !tipo.trim().isEmpty() && !tipo.toLowerCase().contains("producto")) {
-                    if (monto == null) monto = BigDecimal.ZERO;
+                    if (monto == null)
+                        monto = BigDecimal.ZERO;
                     detalle.add(new MembresiaIngresoDTO(tipo, monto));
                     totalGeneral = totalGeneral.add(monto);
                 }

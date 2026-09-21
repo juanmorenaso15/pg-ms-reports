@@ -61,7 +61,7 @@ public interface EventoPagoRepository extends JpaRepository<EventoPago, Long> {
        @Query("SELECT e.tipoMembresia, SUM(e.monto) " +
                      "FROM EventoPago e " +
                      "WHERE e.fechaPago BETWEEN :inicio AND :fin " +
-                     "AND (e.anulado = false OR e.anulado IS NULL) " +
+                     "AND e.anulado = false " +
                      "GROUP BY e.tipoMembresia")
        List<Object[]> sumMontoByTipoMembresiaBetween(@Param("inicio") LocalDateTime inicio,
                      @Param("fin") LocalDateTime fin);
